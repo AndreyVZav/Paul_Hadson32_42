@@ -1,43 +1,14 @@
 //
-//  ContentView6_37Day.swift
+//  ContentView_46Day.swift
 //  iExpense
 //
-//  Created by Андрей Завадский on 05.02.2025.
+//  Created by Андрей Завадский on 18.02.2025.
 //
-
 import SwiftUI
 
-struct ExpenseItem: Identifiable, Codable {
-    var id = UUID()
-    let name: String
-    let type: String
-    let amount: Double
-}
-
-@Observable
-class Expenses {
-    var items = [ExpenseItem](){
-        didSet {
-            if let encoded = try? JSONEncoder().encode(items) {
-                UserDefaults.standard.set(encoded, forKey: "Items")
-            }
-        }
-    }
-    init() {
-        if let sevedItems = UserDefaults.standard.data(forKey: "Items") {
-            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: sevedItems) {
-                items = decodedItems
-                return
-            }
-        }
-        items = []
-    }
-}
-
-
-struct ContentView: View {
+struct ContentView46: View {
     @State private var expenses = Expenses()
-    @State private var showingAddExpense = false
+    
     
     var personalExpenses: [ExpenseItem] {
         expenses.items.filter { $0.type == "Personal" }
@@ -64,18 +35,16 @@ struct ContentView: View {
                     .onDelete { offsets in removeItems(at: offsets, from: businessExpenses) }
                 }
                 
-                
             }
             .navigationTitle("iExpense")
             .toolbar {
-                Button("Add Expense", systemImage: "plus") {
-                    showingAddExpense = true
-                }
+                NavigationLink("+", destination: AddView(expenses: expenses))
+                    .padding()
+                    .buttonStyle(.borderedProminent)
                 
             }
-            .sheet(isPresented: $showingAddExpense) {
-                AddView(expenses: expenses)
-            }
+            
+
         }
     }
     
@@ -113,5 +82,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView46()
 }
