@@ -5,17 +5,20 @@
 //  Created by Андрей Завадский on 18.02.2025.
 //
 import SwiftUI
+import SwiftData
 
 struct ContentView46: View {
-    @State private var expenses = Expenses()
+    //@State private var expenses = Expenses()
+    @Environment(\.modelContext) var modelContext
+    @Query(sort: [SortDescriptor(\ExpenseItem.amount, order: .reverse)]) var expenses: [ExpenseItem]
     
     
     var personalExpenses: [ExpenseItem] {
-        expenses.items.filter { $0.type == "Personal" }
+        expenses.filter { $0.type == "Personal" }
     }
     
     var businessExpenses: [ExpenseItem] {
-        expenses.items.filter { $0.type == "Business" }
+        expenses.filter { $0.type == "Business" }
     }
     var body: some View {
         NavigationStack {
@@ -38,13 +41,13 @@ struct ContentView46: View {
             }
             .navigationTitle("iExpense")
             .toolbar {
-                NavigationLink("+", destination: AddView(expenses: expenses))
+                NavigationLink("+", destination: AddView())
                     .padding()
                     .buttonStyle(.borderedProminent)
                 
             }
             
-
+            
         }
     }
     
@@ -73,14 +76,15 @@ struct ContentView46: View {
     
     func removeItems(at offsets: IndexSet, from list: [ExpenseItem]) {
         for index in offsets {
-            if let originalIndex = expenses.items.firstIndex(where: { $0.id == list[index].id }) {
-                expenses.items.remove(at: originalIndex)
-            }
+            let item = list[index]
+            modelContext.delete(item)
         }
+        
     }
     
 }
 
 #Preview {
     ContentView46()
+        .modelContainer(for: ExpenseItem.self, inMemory: true) // Для превью
 }
