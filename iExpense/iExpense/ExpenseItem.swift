@@ -7,6 +7,10 @@
 import SwiftUI
 import SwiftData
 
+enum SortOption {
+    case byAmount, byName
+}
+
 @Model
 class ExpenseItem {
     var name: String

@@ -8,48 +8,84 @@ import SwiftUI
 import SwiftData
 
 struct ContentView46: View {
-    //@State private var expenses = Expenses()
     @Environment(\.modelContext) var modelContext
-    @Query(sort: [SortDescriptor(\ExpenseItem.amount, order: .reverse)]) var expenses: [ExpenseItem]
+    @State private var sortOrder: SortOption = .byAmount
     
+    // Фильтрация по категориям
+    @State private var fetchDescriptor: FetchDescriptor<ExpenseItem>
+    
+    init() {
+        _fetchDescriptor = State(initialValue: FetchDescriptor(
+            sortBy: [SortDescriptor(\ExpenseItem.amount, order: .reverse)]
+        ))
+    }
+    
+    var allExpenses: [ExpenseItem] {
+            do {
+                return try modelContext.fetch(fetchDescriptor)
+            } catch {
+                print("Ошибка загрузки данных: \(error.localizedDescription)")
+                return []
+            }
+        }
     
     var personalExpenses: [ExpenseItem] {
-        expenses.filter { $0.type == "Personal" }
+        allExpenses.filter { $0.type == "Personal" }
     }
     
     var businessExpenses: [ExpenseItem] {
-        expenses.filter { $0.type == "Business" }
+        allExpenses.filter { $0.type == "Business" }
     }
+    
     var body: some View {
         NavigationStack {
-            List {
-                
-                Section(header: Text("Personal Expenses")) {
-                    ForEach(personalExpenses) { item in
-                        expenseRow(for: item)
-                    }
-                    .onDelete { offsets in removeItems(at: offsets, from: personalExpenses) }
+            VStack {
+                // Выбор сортировки
+                Picker("Sort by", selection: $sortOrder) {
+                    Text("By Amount").tag(SortOption.byAmount)
+                    Text("By Name").tag(SortOption.byName)
                 }
+                .pickerStyle(.segmented)
+                .padding()
+                .onChange(of: sortOrder) { updateSorting() }
                 
-                Section(header: Text("Business Expenses")) {
-                    ForEach(businessExpenses) { item in
-                        expenseRow(for: item)
+                List {
+                    
+                    Section(header: Text("Personal Expenses")) {
+                        ForEach(personalExpenses) { item in
+                            expenseRow(for: item)
+                        }
+                        .onDelete { offsets in removeItems(at: offsets, from: personalExpenses) }
                     }
-                    .onDelete { offsets in removeItems(at: offsets, from: businessExpenses) }
+                    
+                    Section(header: Text("Business Expenses")) {
+                        ForEach(businessExpenses) { item in
+                            expenseRow(for: item)
+                        }
+                        .onDelete { offsets in removeItems(at: offsets, from: businessExpenses) }
+                    }
+                    
+                }
+                .navigationTitle("iExpense")
+                .toolbar {
+                    NavigationLink("+", destination: AddView())
+                        .padding()
+                        .buttonStyle(.borderedProminent)
+                    
                 }
                 
             }
-            .navigationTitle("iExpense")
-            .toolbar {
-                NavigationLink("+", destination: AddView())
-                    .padding()
-                    .buttonStyle(.borderedProminent)
-                
-            }
-            
-            
         }
     }
+    
+    private func updateSorting() {
+            switch sortOrder {
+            case .byAmount:
+                fetchDescriptor.sortBy = [SortDescriptor(\ExpenseItem.amount, order: .reverse)]
+            case .byName:
+                fetchDescriptor.sortBy = [SortDescriptor(\ExpenseItem.name, order: .forward)]
+            }
+        }
     
     func expenseRow(for item: ExpenseItem) -> some View {
         HStack {
@@ -76,15 +112,17 @@ struct ContentView46: View {
     
     func removeItems(at offsets: IndexSet, from list: [ExpenseItem]) {
         for index in offsets {
-            let item = list[index]
-            modelContext.delete(item)
+            if let originalIndex = allExpenses.firstIndex(where: { $0.id == list[index].id }) {
+                modelContext.delete(allExpenses[originalIndex])
+            }
         }
-        
     }
+    
     
 }
 
+
 #Preview {
     ContentView46()
-        .modelContainer(for: ExpenseItem.self, inMemory: true) // Для превью
+        .modelContainer(for: ExpenseItem.self, inMemory: true)
 }

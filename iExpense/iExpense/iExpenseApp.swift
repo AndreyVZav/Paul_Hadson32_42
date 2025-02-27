@@ -13,6 +13,6 @@ struct iExpenseApp: App {
         WindowGroup {
             ContentView46()
         }
-        .modelContainer(for: ExpenseItem.self) // Подключаем SwiftData
+        .modelContainer(for: ExpenseItem.self)
     }
 }
